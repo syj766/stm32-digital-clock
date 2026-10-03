@@ -1,0 +1,17 @@
+# 过程产物 / 调试文件
+*.json
+*.log
+tmp_*
+after_del.*
+key_shot*
+
+# 手动备份（Git 本身就是备份，历史版本会自动保留）
+*.bak
+*.backup-*
+
+# 编辑器 / 系统
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
+.DS_Store
