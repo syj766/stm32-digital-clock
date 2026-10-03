@@ -69,7 +69,12 @@
 └── docs/                                # 最终状态截图
     ├── 01_layout.png
     ├── 02_routed.png
-    └── 03_poured_final.png
+    ├── 03_poured_final.png
+    └── schematic/                       # 原理图分块截图
+        ├── 00_schematic_overview.png    # 2 倍高清总览
+        ├── 00_contact_sheet.png         # 分块联络表（一览）
+        ├── 00_schematic_full.svg        # 矢量源图
+        └── 01_usart.png … 07_buzzer_driver.png
 ```
 
 ## 六、复现步骤
@@ -93,3 +98,19 @@
 | 布局完成 | 自动布线完成 | 铺铜完成（最终） |
 |---|---|---|
 | ![布局](docs/01_layout.png) | ![布线](docs/02_routed.png) | ![铺铜](docs/03_poured_final.png) |
+
+## 九、原理图分块
+
+按功能模块拆分的原理图截图，便于对照 BOM 与 PCB 逐块核对。完整总览见 [`docs/schematic/00_schematic_overview.png`](docs/schematic/00_schematic_overview.png)，分块一览见联络表：
+
+![原理图分块联络表](docs/schematic/00_contact_sheet.png)
+
+| # | 模块 | 截图 |
+|---|---|---|
+| 01 | USART 接口 | ![USART](docs/schematic/01_usart.png) |
+| 02 | RTC 备份供电 | ![RTC Backup Power](docs/schematic/02_rtc_backup_power.png) |
+| 03 | 5V 输入 / 主控核心板 | ![5V Input](docs/schematic/03_5v_input.png) |
+| 04 | 独立按键 | ![User Keys](docs/schematic/04_user_keys.png) |
+| 05 | 状态 LED | ![State LEDs](docs/schematic/05_state_leds.png) |
+| 06 | 数码管驱动 | ![Digit Driver](docs/schematic/06_digit_driver.png) |
+| 07 | 蜂鸣器驱动 | ![Buzzer Driver](docs/schematic/07_buzzer_driver.png) |
