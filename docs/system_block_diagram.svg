@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 520" width="720" height="520" role="img" aria-label="STM32 数字钟系统框图">
+  <title>STM32 数字钟系统框图</title>
+  <defs>
+    <marker id="ar" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto">
+      <path d="M1 1 L7 4 L1 7 Z" fill="#52525B"/>
+    </marker>
+    <style>
+      .th { fill: #171717; font-family: "PingFang SC", "SF Pro Text", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; font-size: 14px; font-weight: 500; }
+      .ts { fill: #52525B; font-family: "PingFang SC", "SF Pro Text", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; font-size: 12px; font-weight: 400; }
+      .arr { stroke: #52525B; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+      g.c-neutral > rect { fill: #F7F7F8; stroke: #D4D4D8; }
+      g.c-brand > rect { fill: #F2F7FF; stroke: #4B3FE3; }
+      .c-brand > .th { fill: #1A1759; }
+      .c-brand > .ts { fill: #4B3FE3; }
+    </style>
+  </defs>
+
+  <rect x="0" y="0" width="720" height="520" fill="#FFFFFF"/>
+
+  <g class="c-neutral">
+    <rect x="280" y="90" width="160" height="56" rx="8"/>
+    <text class="th" x="360" y="114" text-anchor="middle">5V 输入</text>
+    <text class="ts" x="360" y="133" text-anchor="middle">J2 → 板载 3V3</text>
+  </g>
+
+  <g class="c-brand">
+    <rect x="270" y="250" width="180" height="80" rx="8"/>
+    <text class="th" x="360" y="286" text-anchor="middle">STM32F103C8T6</text>
+    <text class="ts" x="360" y="308" text-anchor="middle">核心板 · 40Pin</text>
+  </g>
+
+  <g class="c-neutral">
+    <rect x="40" y="102" width="180" height="56" rx="8"/>
+    <text class="th" x="130" y="126" text-anchor="middle">数码管显示</text>
+    <text class="ts" x="130" y="145" text-anchor="middle">DS1 + Q1–Q4 位选</text>
+  </g>
+  <g class="c-neutral">
+    <rect x="40" y="262" width="180" height="56" rx="8"/>
+    <text class="th" x="130" y="286" text-anchor="middle">4 路按键</text>
+    <text class="ts" x="130" y="305" text-anchor="middle">SW1–SW4 + 100nF 去抖</text>
+  </g>
+  <g class="c-neutral">
+    <rect x="40" y="422" width="180" height="56" rx="8"/>
+    <text class="th" x="130" y="446" text-anchor="middle">4 路状态 LED</text>
+    <text class="ts" x="130" y="465" text-anchor="middle">LED1–LED4 灌电流</text>
+  </g>
+
+  <g class="c-neutral">
+    <rect x="500" y="102" width="180" height="56" rx="8"/>
+    <text class="th" x="590" y="126" text-anchor="middle">蜂鸣器报警</text>
+    <text class="ts" x="590" y="145" text-anchor="middle">BUZ1 + Q5 低边驱动</text>
+  </g>
+  <g class="c-neutral">
+    <rect x="500" y="262" width="180" height="56" rx="8"/>
+    <text class="th" x="590" y="286" text-anchor="middle">USART 串口</text>
+    <text class="ts" x="590" y="305" text-anchor="middle">J1 · PA9 / PA10</text>
+  </g>
+  <g class="c-neutral">
+    <rect x="500" y="422" width="180" height="56" rx="8"/>
+    <text class="th" x="590" y="446" text-anchor="middle">RTC 后备电源</text>
+    <text class="ts" x="590" y="465" text-anchor="middle">CR2032 + 1N4148 或门</text>
+  </g>
+
+  <path class="arr" d="M360 146 V248" marker-end="url(#ar)"/>
+  <path class="arr" d="M270 262 H246 V130 H222" marker-end="url(#ar)"/>
+  <path class="arr" d="M270 290 H222" marker-end="url(#ar)"/>
+  <path class="arr" d="M270 318 H246 V450 H222" marker-end="url(#ar)"/>
+  <path class="arr" d="M450 262 H474 V130 H498" marker-end="url(#ar)"/>
+  <path class="arr" d="M450 290 H498" marker-end="url(#ar)"/>
+  <path class="arr" d="M450 318 H474 V450 H498" marker-end="url(#ar)"/>
+</svg>
