@@ -2,8 +2,13 @@
 
 基于 STM32F103C8T6 核心板的 4 位数码管数字钟。原理图、PCB、DRC、自动布线、铺铜均已完成，并通过嘉立创打样 + BOM 配单下单。
 
-- **版本**：`v1.0-frozen`（已冻结的第一版，设计与下单参数一致、可复现）
-- **冻结日期**：2026-10-03
+本仓库保存同一原理图的**两版 PCB 设计**：原理图自 V1 起冻结不变，PCB 每版从头重新设计。
+
+| 版本 | tag | 冻结日期 | 说明 |
+|---|---|---|---|
+| V1 | `v1.0-frozen` | 2026-10-03 | 首版 PCB，产物在仓库根目录 |
+| V2 | `v2.0-frozen` | 2026-10-04 | PCB 全面重设计，产物在 `*/v2/` 子目录，详见第十一章 |
+
 - **设计工具**：嘉立创EDA 专业版 V4.1.60
 
 ---
@@ -68,15 +73,27 @@
 ├── README.md
 ├── .gitignore
 ├── src/
-│   └── stm32-digital-clock_v1.0.epro2   # 嘉立创EDA 源工程（原理图 + PCB + 面板）
+│   ├── stm32-digital-clock_v1.0.epro2   # V1 源工程（原理图 + PCB + 面板）
+│   └── v2/
+│       └── stm32-digital-clock_v2.0.epro2   # V2 源工程快照
 ├── manufacture/
-│   ├── clock_Gerber.zip                 # Gerber + 钻孔文件，可直接上传打板
-│   └── clock_BOM.csv                    # 100% 匹配 BOM，可直接导入商城下单
+│   ├── clock_Gerber.zip                 # V1 Gerber + 钻孔文件，可直接上传打板
+│   ├── clock_BOM.csv                    # 100% 匹配 BOM，可直接导入商城下单
+│   └── v2/
+│       ├── clock_v2_Gerber.zip          # V2 Gerber（含泪滴）
+│       └── clock_BOM.csv                # V2 BOM（与 V1 相同）
 └── docs/                                # 最终状态截图
     ├── system_block_diagram.svg         # 系统框图（矢量源文件）
     ├── 01_layout.png
     ├── 02_routed.png
     ├── 03_poured_final.png
+    ├── v2/                              # V2 PCB 冻结版截图
+    │   ├── 00_full_board_all_layers.png
+    │   ├── 01_TOP_copper.png
+    │   ├── 02_BOTTOM_copper.png
+    │   ├── 03_TOP_silkscreen.png
+    │   ├── 04_power_rtc_zoom.png
+    │   └── 05_mcu_dense_zoom.png
     └── schematic/                       # 原理图分块截图
         ├── 00_schematic_overview.png    # 2 倍高清总览
         ├── 00_contact_sheet.png         # 分块联络表（一览）
@@ -127,3 +144,42 @@
 | 05 | 状态 LED | ![State LEDs](docs/schematic/05_state_leds.png) |
 | 06 | 数码管驱动 | ![Digit Driver](docs/schematic/06_digit_driver.png) |
 | 07 | 蜂鸣器驱动 | ![Buzzer Driver](docs/schematic/07_buzzer_driver.png) |
+
+## 十一、V2.0 版本（PCB 重设计）
+
+**背景**：原理图自 V1 冻结后未改动，V2 仅对 PCB 从头重新设计，目标是在走线效率、电源完整性与工艺细节上全面超过 V1。BOM 因原理图不变而完全沿用 V1（22 行 / 100% 匹配）。
+
+**V2 产物位置**
+
+| 内容 | 路径 |
+|---|---|
+| 工程快照 | [`src/v2/stm32-digital-clock_v2.0.epro2`](src/v2/stm32-digital-clock_v2.0.epro2) |
+| Gerber（含泪滴） | [`manufacture/v2/clock_v2_Gerber.zip`](manufacture/v2/clock_v2_Gerber.zip) |
+| BOM | [`manufacture/v2/clock_BOM.csv`](manufacture/v2/clock_BOM.csv) |
+| 核对截图 | [`docs/v2/`](docs/v2/) |
+
+**V1 → V2 指标对比**
+
+| 指标 | V1 | V2 | 说明 |
+|---|---|---|---|
+| 板框 | 95 × 75 mm | 95 × 75 mm | 不变 |
+| 元件布局 | 57 件（TOP 16 / BOTTOM 41） | 57 件（全 TOP） | 改单面布局 |
+| 走线段数 | 563 | 453 | −20% |
+| 走线总长 | 2715 mm | 1498 mm | −45% |
+| 电源线宽 | 单一 10 mil | 10 / 15 / 20 / 25 / 30 mil 五档 | 按网络差异化 |
+| 过孔 | 55 | 24 | −56% |
+| 铺铜 | 1 区（底层 GND） | 2 区（TOP 3V3 + BOTTOM GND） | 双面整板铺铜 |
+| 泪滴 | 0 | 296 | 强化焊盘/走线连接 |
+| DRC | 通过 | 0 违规 | — |
+
+**V2 效果图**
+
+| 全层总览 | TOP 铜层 | BOTTOM 铜层 |
+|---|---|---|
+| ![全层](docs/v2/00_full_board_all_layers.png) | ![TOP](docs/v2/01_TOP_copper.png) | ![BOTTOM](docs/v2/02_BOTTOM_copper.png) |
+
+| TOP 丝印 | 电源/RTC 局部 | MCU 密集区 |
+|---|---|---|
+| ![丝印](docs/v2/03_TOP_silkscreen.png) | ![电源](docs/v2/04_power_rtc_zoom.png) | ![MCU](docs/v2/05_mcu_dense_zoom.png) |
+
+**复现**：导入 `src/v2/stm32-digital-clock_v2.0.epro2` → 跑 DRC（应为 0）→ 确认 TOP 3V3 / BOTTOM GND 铺铜已重建 → 直接用 `manufacture/v2/clock_v2_Gerber.zip` 上传打板。
