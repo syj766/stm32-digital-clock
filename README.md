@@ -78,7 +78,73 @@ AI 交叉验证：网表 ↔ .ioc ↔ 截图 三方互查，产出 ①比对报�
 
 ---
 
-## 一、板级参数
+## 一、架构与集成（定稿）
+
+### 1. 架构（为什么这样分）
+
+```
+                    ┌─ main.c（永远只有 5 行，全部落在 USER CODE 段）
+                    │
+                    └─ app.c/.h ────── 应用层：课设逻辑唯一所在地（TODO 都在这）
+                         │  装配并调度以下全部模块
+        ┌────────┬───────┼────────┬─────────┬──────────┐
+   seg_display   key     led    buzzer  uart_console  clock_time
+   数码管扫描    按键消抖  LED    PWM变调   串口printf    走时
+        │         │       │        │         │           │
+        └─────────┴───────┴───┬────┴─────────┴───────────┘
+                              ▼
+                         pinmap.h（引脚+极性唯一事实来源，纯宏无 .c）
+                              ▼
+                    CubeMX 生成的 gpio.c / usart1 / tim3（不碰）
+```
+
+**三条架构铁律**：① 引脚宏只从 pinmap.h 取，任何模块不得另写引脚号；② 模块之间不横向 include，全部通过 app.c 汇聚；③ main.c 只认识 app.h 和 hw_test.h——加功能 = 加一对文件 + app.c 里调一行，main.c 永远不变。
+
+**main.c 的 5 行**（顺序是硬约束）：
+
+```c
+#include "app.h"       /* USER CODE BEGIN Includes 段内 */
+#include "hw_test.h"
+
+app_init();            /* USER CODE 2：初始化全部模块（buzzer_init 在此启动 PWM） */
+hw_test_run();         /* USER CODE 2：上电自检——必须在 app_init 之后，
+                          否则蜂鸣段静音（PWM 未启动，见笔记末"易错点①"） */
+app_task();            /* USER CODE 3（while(1) 内）：主循环调度一切 */
+```
+
+### 2. 操作清单（每一步都可验证）
+
+| # | 操作 | 验证方法 |
+|---|---|---|
+| ① | `clock_code/Core/Inc` 的 **9 个 .h** → 复制进 `clock/Core/Inc`；`Src` 的 **8 个 .c** → `clock/Core/Src` | 两目录数文件：**12** 和 **14** |
+| ② | 根目录 `CMakeLists.txt` 的 `target_sources` 空 段 → 填 8 个 `Core/Src/*.c` | 只动根目录这个文件；`cmake/stm32cubemx/` 子 CMake（HAL 源）是 CubeMX 的，**不碰** |
+| ③ | `stm32f1xx_it.c`：Includes 段加 `#include "clock_time.h"`；`SysTick_IRQn 0` 段加 `clock_time_isr_1ms();` | grep 两个名字各命中 1 次 |
+| ④ | `main.c`：5 行按上图落进 Includes / 2 / 3 三个 USER CODE 段 | `app_init` 必须在 `hw_test_run` **之前** |
+| ⑤ | 编译：`cmake --preset Debug` → `cmake --build build/Debug`（default 是 hidden preset，勿用） | 出现 `Built target clock` + 固件尺寸 |
+| ⑥ | 烧录 `build/Debug/clock.elf`（ST-Link / CubeProgrammer，SWD 直连） | — |
+
+### 3. 上电验收单（跑一遍，全是感官可查的）
+
+```
+LED 流水×2 → 8.8.8.8. 全亮 1.5s → 逐位扫 ×2 → 逐段扫（每段 0.25s）
+→ 哔哔哔——哔 → Do Mi So Do↑（音阶 = 音乐功能自证）
+→ 按 K1~K4（对应 LED 亮 + 数码管显示键号 + 响一声）→ 双响收尾
+→ 12:00 走时，冒号每秒闪，LED1 心跳，串口 115200 每秒报时
+```
+
+### 4. 易错点（每条都真实踩过或差点踩）
+
+1. **初始化顺序**：`app_init()` 必须在 `hw_test_run()` 之前——PWM 由 `buzzer_init()` 启动，先自检后初始化 = 蜂鸣段静音。审查结论说"顺序可换"，grep 一查就翻案。
+2. **PB0 是唯一不能直推引脚的测试项**：它已归 TIM3（AF 模式），GPIO 写入静默无效——蜂鸣器测试必须走 buzzer 驱动。
+3. **所有修改只落 USER CODE 段**：段外改动会被 CubeMX 重新生成抹掉。
+4. **占空不是 GPIO 开关**：无源管 100% 占空 = 直流 = 不响；"响" = 50% 方波 @ 谐振。
+5. **改主频要联动**：`buzzer.c` 的 `BUZZER_TIMER_CLOCK_HZ=8000000` 与时钟树绑定，CubeMX 改频后必须同步。
+6. **JTAG**：SYS Debug 保持 Serial Wire，切勿 Full JTAG（PB3/PB4/PA15 三个段选脚会失灵）；PA13/PA14 别配成 GPIO。
+7. **构建命令**：`--preset Debug`（default 是 hidden，直接用必报错）。
+
+---
+
+## 二、板级参数
 
 | 项目 | 参数 |
 |---|---|
@@ -90,13 +156,13 @@ AI 交叉验证：网表 ↔ .ioc ↔ 截图 三方互查，产出 ①比对报�
 | 过孔 | 0.3 mm 孔 / 0.6 mm 盘（12 / 24 mil） |
 | 焊盘距板边 | ≥ 64 mil（1.6 mm） |
 
-## 二、系统框图
+## 三、系统框图
 
 模块级拓扑，一眼看清各功能块与主控的挂接关系（矢量源文件：[`docs/system_block_diagram.svg`](docs/system_block_diagram.svg)）。
 
 ![系统框图](docs/system_block_diagram.svg)
 
-## 三、功能模块
+## 四、功能模块
 
 - **显示**：4 位共阳数码管 SR410361N；段选串 100Ω 限流电阻，位选用 S8550 PNP 三极管高边驱动
 - **输入**：4 路独立按键（10kΩ 上拉 + 100nF 去抖）
@@ -105,7 +171,7 @@ AI 交叉验证：网表 ↔ .ioc ↔ 截图 三方互查，产出 ①比对报�
 - **接口**：USART1 三针排针（PA9 / PA10 / GND）、5V 输入两针排针
 - **主控**：立创·地阔星 LCKFB-DKX-STM32F103C8T6 核心板
 
-## 四、BOM
+## 五、BOM
 
 共 **22 行 / 22 种物料 / 59 件**（含地阔星核心板 1 件、1×20P 排母 2 件），立创商城配单 **100% 匹配**。
 
@@ -121,7 +187,7 @@ AI 交叉验证：网表 ↔ .ioc ↔ 截图 三方互查，产出 ①比对报�
 | 电池座 | KH-CR2032-2-1（插件式） | C5365915 |
 | 轻触开关 | K2-1102SP-A4SC-04（6×6×4.3） | C83916 |
 
-## 五、制造与下单记录
+## 六、制造与下单记录
 
 | 时间 | 订单号 | 内容 | 金额 |
 |---|---|---|---|
@@ -131,7 +197,7 @@ AI 交叉验证：网表 ↔ .ioc ↔ 截图 三方互查，产出 ①比对报�
 
 采购方案为「**光板打样 + 立创商城配单 + 手工焊接**」。
 
-## 六、目录结构
+## 七、目录结构
 
 ```
 .
@@ -166,7 +232,7 @@ AI 交叉验证：网表 ↔ .ioc ↔ 截图 三方互查，产出 ①比对报�
         └── 01_usart.png … 07_buzzer_driver.png
 ```
 
-## 七、复现步骤
+## 八、复现步骤
 
 1. 用嘉立创EDA 专业版「文件 → 导入工程」打开 `src/stm32-digital-clock_v1.0.epro2`
 2. 打开原理图，跑一次 ERC；打开 PCB，跑一次 DRC
@@ -181,20 +247,20 @@ AI 交叉验证：网表 ↔ .ioc ↔ 截图 三方互查，产出 ①比对报�
 
 > 排母先用核心板插上定位再焊，保证间距；LED / 二极管 / 数码管注意极性。
 
-## 八、注意事项
+## 九、注意事项
 
 - `.epro2` / `.zip` / `.png` 都是二进制，Git 无法 diff，**版本追溯依靠 tag**（本版为 `v1.0-frozen`）
 - 蜂鸣器 TMB09A05 是 **5V 有源电磁式**，用 3V3 驱动时音量偏小；如需更响可换 3V 型号（但脚距须保持 5.0 mm，否则焊不上）
 - 本版按**手工焊接**设计，器件最大为 0603 / 0805 / SOT-23 与插件；后续若加入 QFN / BGA，需转 SMT 一站式
 - 打样已完成的板子，任何元件替换**都不能改封装 / 脚距**
 
-## 九、效果图
+## 十、效果图
 
 | 布局完成 | 自动布线完成 | 铺铜完成（最终） |
 |---|---|---|
 | ![布局](docs/01_layout.png) | ![布线](docs/02_routed.png) | ![铺铜](docs/03_poured_final.png) |
 
-## 十、原理图分块
+## 十一、原理图分块
 
 按功能模块拆分的原理图截图，便于对照 BOM 与 PCB 逐块核对。完整总览见 [`docs/schematic/00_schematic_overview.png`](docs/schematic/00_schematic_overview.png)，分块一览见联络表：
 
@@ -210,7 +276,7 @@ AI 交叉验证：网表 ↔ .ioc ↔ 截图 三方互查，产出 ①比对报�
 | 06 | 数码管驱动 | ![Digit Driver](docs/schematic/06_digit_driver.png) |
 | 07 | 蜂鸣器驱动 | ![Buzzer Driver](docs/schematic/07_buzzer_driver.png) |
 
-## 十一、V2.0 版本（PCB 重设计）
+## 十二、V2.0 版本（PCB 重设计）
 
 **背景**：原理图自 V1 冻结后未改动，V2 仅对 PCB 从头重新设计，目标是在走线效率、电源完整性与工艺细节上全面超过 V1。BOM 因原理图不变而完全沿用 V1（22 行 / 100% 匹配）。
 
