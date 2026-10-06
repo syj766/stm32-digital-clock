@@ -78,7 +78,65 @@ AI 交叉验证：网表 ↔ .ioc ↔ 截图 三方互查，产出 ①比对报�
 
 ---
 
-## 一、板级参数
+## 一、架构与集成（定稿）
+
+### 1. 架构
+
+```
+        ┌─ main.c（永远只有 5 行，全部落在 USER CODE 段）
+        ├────────────────────────┐
+        ▼                        ▼
+   app.c/.h                 hw_test.c/.h
+   应用层：课设逻辑唯一所在    上电自检（唯一允许跨层直推的模块：
+        │                    蜂鸣器走 buzzer 驱动、输出走 uart_console）
+        │ 装配并调度以下 6 个业务模块
+   ┌────┬────┬────┬────┬────┴─┐
+seg_display key led buzzer uart_console clock_time
+   │    │   │    │      │          │
+   └────┴───┴──┬─┴──────┴──────────┘
+               ▼
+        pinmap.h（引脚+极性唯一事实来源，纯宏无 .c）
+               ▼
+   CubeMX 生成物（不碰）：main.c 内 MX_GPIO/USART1/TIM3_Init
+                        + stm32f1xx_hal_msp.c + Drivers/
+   （本工程 CoupleFile=false，无独立 gpio.c/usart.c/tim.c）
+```
+
+**三条铁律**：① 引脚宏只从 pinmap.h 取；② 业务模块之间不横向 include，经 app.c 汇聚——**hw_test 是唯一例外**（自检必须跨层直推才能定位故障）；③ main.c 只认识 app.h 与 hw_test.h。
+
+**main.c 的 5 行**（顺序硬约束：`app_init()` 在 `hw_test_run()` 之前，理由见易错点①）。
+
+### 2. 操作清单（已完成 ✓，留档备查重做）
+
+| # | 操作 | 验证 |
+|---|---|---|
+| ① | 9 个 .h → `Core/Inc`、8 个 .c → `Core/Src`（源：clock_code，**该暂存区已删除**；恢复源=ZCode 工作区备份；**以 Core/ 现行版为准**） | 目录数 12 / 14 |
+| ② | 根 CMakeLists.txt `target_sources` 加 8 个 .c | 逐行对上实存文件 |
+| ③ | it.c：Includes 加 `clock_time.h` + SysTick 0 段加 `clock_time_isr_1ms();` | grep 两名各 1 次 |
+| ④ | main.c 5 行落 USER CODE 段，`app_init` 先行 | 上下文目视 |
+| ⑤ | `cmake --preset Debug` + `cmake --build build/Debug` | `Built target clock` |
+| ⑥ | 烧录 clock.elf | 上电验收单 |
+
+### 3. 上电验收单
+
+```
+LED 流水×2 → 8.8.8.8. 全亮 → 逐位 ×2 → 逐段 → 哔哔哔——哔 → Do Mi So Do↑
+→ K1~K4（LED+键号+响）→ 双响 → 12:00 走时、冒号闪、LED1 心跳、串口每秒报时
+```
+
+### 4. 易错点（条条有案底）
+
+1. **初始化顺序**：`app_init()` 必须先行——PWM 只在 `buzzer_init()` 里 `HAL_TIM_PWM_Start`，审查称"buzzer_on 会触发启动"，grep 证伪。
+2. **PB0 唯一不能直推引脚**：已归 TIM3（AF），GPIO 写入静默无效，蜂鸣测试走驱动。
+3. **修改只落 USER CODE 段**：段外改动被重新生成抹掉。
+4. **占空≠GPIO 开关**：无源管 100% 占空 = 直流 = 不响；响 = 50% 方波 @ 谐振 2048Hz。
+5. **改主频联动**：`BUZZER_TIMER_CLOCK_HZ` 与时钟树绑定。
+6. **JTAG**：保持 Serial Wire；PA13/14 别配 GPIO。
+7. **构建**：`--preset Debug`（default hidden）。
+
+---
+
+## 二、板级参数
 
 | 项目 | 参数 |
 |---|---|
@@ -90,13 +148,13 @@ AI 交叉验证：网表 ↔ .ioc ↔ 截图 三方互查，产出 ①比对报�
 | 过孔 | 0.3 mm 孔 / 0.6 mm 盘（12 / 24 mil） |
 | 焊盘距板边 | ≥ 64 mil（1.6 mm） |
 
-## 二、系统框图
+## 三、系统框图
 
 模块级拓扑，一眼看清各功能块与主控的挂接关系（矢量源文件：[`docs/system_block_diagram.svg`](docs/system_block_diagram.svg)）。
 
 ![系统框图](docs/system_block_diagram.svg)
 
-## 三、功能模块
+## 四、功能模块
 
 - **显示**：4 位共阳数码管 SR410361N；段选串 100Ω 限流电阻，位选用 S8550 PNP 三极管高边驱动
 - **输入**：4 路独立按键（10kΩ 上拉 + 100nF 去抖）
@@ -105,7 +163,7 @@ AI 交叉验证：网表 ↔ .ioc ↔ 截图 三方互查，产出 ①比对报�
 - **接口**：USART1 三针排针（PA9 / PA10 / GND）、5V 输入两针排针
 - **主控**：立创·地阔星 LCKFB-DKX-STM32F103C8T6 核心板
 
-## 四、BOM
+## 五、BOM
 
 共 **22 行 / 22 种物料 / 59 件**（含地阔星核心板 1 件、1×20P 排母 2 件），立创商城配单 **100% 匹配**。
 
@@ -121,7 +179,7 @@ AI 交叉验证：网表 ↔ .ioc ↔ 截图 三方互查，产出 ①比对报�
 | 电池座 | KH-CR2032-2-1（插件式） | C5365915 |
 | 轻触开关 | K2-1102SP-A4SC-04（6×6×4.3） | C83916 |
 
-## 五、制造与下单记录
+## 六、制造与下单记录
 
 | 时间 | 订单号 | 内容 | 金额 |
 |---|---|---|---|
@@ -131,7 +189,7 @@ AI 交叉验证：网表 ↔ .ioc ↔ 截图 三方互查，产出 ①比对报�
 
 采购方案为「**光板打样 + 立创商城配单 + 手工焊接**」。
 
-## 六、目录结构
+## 七、目录结构
 
 ```
 .
@@ -166,7 +224,7 @@ AI 交叉验证：网表 ↔ .ioc ↔ 截图 三方互查，产出 ①比对报�
         └── 01_usart.png … 07_buzzer_driver.png
 ```
 
-## 七、复现步骤
+## 八、复现步骤
 
 1. 用嘉立创EDA 专业版「文件 → 导入工程」打开 `src/stm32-digital-clock_v1.0.epro2`
 2. 打开原理图，跑一次 ERC；打开 PCB，跑一次 DRC
@@ -181,20 +239,20 @@ AI 交叉验证：网表 ↔ .ioc ↔ 截图 三方互查，产出 ①比对报�
 
 > 排母先用核心板插上定位再焊，保证间距；LED / 二极管 / 数码管注意极性。
 
-## 八、注意事项
+## 九、注意事项
 
 - `.epro2` / `.zip` / `.png` 都是二进制，Git 无法 diff，**版本追溯依靠 tag**（本版为 `v1.0-frozen`）
 - 蜂鸣器 TMB09A05 是 **5V 有源电磁式**，用 3V3 驱动时音量偏小；如需更响可换 3V 型号（但脚距须保持 5.0 mm，否则焊不上）
 - 本版按**手工焊接**设计，器件最大为 0603 / 0805 / SOT-23 与插件；后续若加入 QFN / BGA，需转 SMT 一站式
 - 打样已完成的板子，任何元件替换**都不能改封装 / 脚距**
 
-## 九、效果图
+## 十、效果图
 
 | 布局完成 | 自动布线完成 | 铺铜完成（最终） |
 |---|---|---|
 | ![布局](docs/01_layout.png) | ![布线](docs/02_routed.png) | ![铺铜](docs/03_poured_final.png) |
 
-## 十、原理图分块
+## 十一、原理图分块
 
 按功能模块拆分的原理图截图，便于对照 BOM 与 PCB 逐块核对。完整总览见 [`docs/schematic/00_schematic_overview.png`](docs/schematic/00_schematic_overview.png)，分块一览见联络表：
 
@@ -210,7 +268,7 @@ AI 交叉验证：网表 ↔ .ioc ↔ 截图 三方互查，产出 ①比对报�
 | 06 | 数码管驱动 | ![Digit Driver](docs/schematic/06_digit_driver.png) |
 | 07 | 蜂鸣器驱动 | ![Buzzer Driver](docs/schematic/07_buzzer_driver.png) |
 
-## 十一、V2.0 版本（PCB 重设计）
+## 十二、V2.0 版本（PCB 重设计）
 
 **背景**：原理图自 V1 冻结后未改动，V2 仅对 PCB 从头重新设计，目标是在走线效率、电源完整性与工艺细节上全面超过 V1。BOM 因原理图不变而完全沿用 V1（22 行 / 100% 匹配）。
 
