@@ -1,0 +1,14 @@
+# 构建产物
+build/
+mx.scratch
+
+# 编辑器 / IDE
+.vscode/
+.settings/
+.clangd
+.mxproject
+
+# 编译中间物（若在源码目录构建）
+*.o
+*.elf
+*.map

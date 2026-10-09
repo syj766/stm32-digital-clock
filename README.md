@@ -31,7 +31,7 @@ AI 交叉验证：网表 ↔ .ioc ↔ 截图 三方互查，产出 ①比对报�
 填应用逻辑，上板先跑引脚级自检（按键回显、全段点亮、蜂鸣一声），再上真逻辑
 ```
 
-**下一步**：`.epro2` 原理图 → `CubeMX` 生成 HAL 工程，AI 三方比对产出 `pinmap.h`。
+**当前进度**：`pinmap.h` 已产出；**焊接后硬件自检程序已完成**（见 [`firmware/`](firmware/README.md)）；⏳ 数字钟功能逻辑待实现。
 
 > **实战：一次 AI 交叉验证如何挖出 .ioc 的 bug（以本工程为例）**
 >
@@ -205,6 +205,13 @@ LED 流水×2 → 8.8.8.8. 全亮 → 逐位 ×2 → 逐段 → 哔哔哔——�
 │   └── v2/
 │       ├── clock_v2_Gerber.zip          # V2 Gerber（含泪滴）
 │       └── clock_BOM.csv                # V2 BOM（与 V1 相同）
+├── firmware/                            # 焊接后硬件自检程序（软件，详见 firmware/README.md）
+│   ├── README.md
+│   ├── clock.ioc                        # CubeMX 配置源头（引脚/时钟/Debug）
+│   ├── CMakeLists.txt                   # 构建入口（含 8 个自定义 .c）
+│   └── Core/
+│       ├── Inc/                         # 9 个自定义头文件
+│       └── Src/                         # 8 个自定义 .c + main.c / stm32f1xx_it.c
 └── docs/                                # 最终状态截图
     ├── system_block_diagram.svg         # 系统框图（矢量源文件）
     ├── 01_layout.png
