@@ -9,10 +9,8 @@
  *      （U1 排针封装 uuid=9e60e809bd956221，40 个焊盘逐一比对，与截图一致）
  *   3. clock.ioc 引脚方向交叉验证：12 输出 / 4 输入 与本表完全吻合
  *
- * 已知差异（修复步骤见 patches/clock.ioc_PA3_to_PB3.md）：
- *   硬件 SEG_G 接 PB3（排针 11 脚），clock.ioc 却配置了 PA3、漏了 PB3。
- *   各模块 init() 自行按本文件配置引脚，不依赖 CubeMX 生成的 gpio 代码，
- *   因此无论 .ioc 是否重新生成，固件均按本表工作。
+ * 历史差异（已于 2026-10-06 修复）：硬件 SEG_G 接 PB3（排针 11 脚），clock.ioc 曾误配 PA3、漏了 PB3；
+ *   现已改为 PB3.Signal=GPIO_Output 并重新生成代码。各模块 init() 仍按本文件配置引脚，固件不依赖 CubeMX 生成的 gpio 代码。
  * @endverbatim
  */
 #ifndef PINMAP_H
@@ -38,7 +36,7 @@ extern "C" {
 #define SEG_F_PORT        GPIOB
 #define SEG_F_PIN         GPIO_PIN_4     /* 排针 12 */
 #define SEG_G_PORT        GPIOB
-#define SEG_G_PIN         GPIO_PIN_3     /* 排针 11 ⚠️ .ioc 现配的是 PA3，需修正 */
+#define SEG_G_PIN         GPIO_PIN_3     /* 排针 11 */
 #define SEG_DP_PORT       GPIOA
 #define SEG_DP_PIN        GPIO_PIN_15    /* 排针 10 */
 
@@ -74,7 +72,7 @@ extern "C" {
 
 /* ==================== 蜂鸣器（S8050 低边 NPN：PB0 拉高 = 鸣响） ==================== */
 #define BUZZER_PORT       GPIOB
-#define BUZZER_PIN        GPIO_PIN_0     /* 排针 33，TIM3_CH3 复用脚；有源蜂鸣器 GPIO 直控 */
+#define BUZZER_PIN        GPIO_PIN_0     /* 排针 33，TIM3_CH3 复用脚；无源蜂鸣器走 TIM3 PWM，勿配成普通 GPIO 输出 */
 
 /* ==================== USART1 调试口（排针 J1：1=PA9 2=PA10 3=GND） ==================== */
 #define USART1_TX_PORT    GPIOA
