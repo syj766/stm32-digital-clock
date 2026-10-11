@@ -20,7 +20,7 @@ void clock_time_init(void)
     s_sec_flag  = 0u;
 }
 
-/* SysTick 中断里调用（1ms 一次）。放在 HAL_IncTick() 之前，逻辑极短不影响 HAL 时基。 */
+/* SysTick 中断里调用（1ms 一次）。与 HAL_IncTick() 互不依赖，放前放后均可。 */
 void clock_time_isr_1ms(void)
 {
     s_ms++;
