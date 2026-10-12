@@ -196,7 +196,7 @@ clock_time_isr_1ms();
 
 集成完成后，上电先运行约 10 秒硬件自检（LED 流水 → 数码管全亮 → 逐位扫描 → 逐段扫描 → 蜂鸣器三短一长 → 按键逐一测试），自检通过后进入时钟模式：
 
-- 数码管显示 HH:MM，冒号每秒闪烁（软件从 12:00:00 开始走时）
+- 数码管显示 HH:MM，冒号每秒闪烁（软件从 00:00:00 开始走时：首次上电 RTC 计数为 0；设表后从设定值继续）
 - 串口 115200 打印启动横幅与每秒时间
 - 任意按键短按/长按：蜂鸣 30ms + 串口回显键值
 - LED1 每秒翻转（心跳指示）
@@ -236,3 +236,4 @@ cmake --build build/Debug
 
 - [从零搭建 HAL 工程（CubeMX → 移植 → 跑通）](https://github.com/syj766/personal-workflow/blob/main/workflows/02-board-software/01-cubemx-hal-scaffold.md)：本工程从零复刻的完整流程（图形化配置 → 移植 → 拼 USER CODE 段 → 编译烧录）。
 - [PWM 初始化顺序笔记](docs/PWM初始化顺序笔记.md)：为什么 `main.c` 里 `app_init()` 必须在 `hw_test_run()` 之前。
+- [RTC 掉电续走](docs/RTC掉电续走.md)：断电再上电时间为何不丢、`BKP->DR1` 标记怎么用。
