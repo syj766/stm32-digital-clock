@@ -1,8 +1,15 @@
 /**
  * @file    clock_time.c
- * @brief   软件走时（SysTick 1ms 时基 → 时/分/秒）
+ * @brief   软件走时（SysTick 1ms 时基 → 时/分/秒）+ RTC 断电存档
+ *
+ * 时间源设计：运行中由 SysTick 软件计数（RTC 只在上电时读一次作"断电续表"，
+ * clock_time_set() 时写回 RTC 作"存档"）。RTC 挂在备份域（VBAT 供电），主电源
+ * 断了时间照走；上电 MX_RTC_Init 先恢复计数器，本模块 init 再读进 s_secs。
  */
 #include "clock_time.h"
+#include "stm32f1xx_hal.h"
+
+extern RTC_HandleTypeDef hrtc;   /* CubeMX 生成，定义于 main.c */
 
 #define SECS_PER_DAY   86400u
 #define DEFAULT_HOURS  12u
@@ -16,8 +23,19 @@ void clock_time_init(void)
 {
     s_ms        = 0u;
     s_ms_in_sec = 0u;
-    s_secs      = (uint32_t)DEFAULT_HOURS * 3600u;
     s_sec_flag  = 0u;
+
+    /* 上电从 RTC 续表：MX_RTC_Init 已把计数器恢复/初始化（见 main.c Check_RTC_BKUP） */
+    RTC_TimeTypeDef t = {0};
+    RTC_DateTypeDef d = {0};
+    if ((HAL_RTC_GetTime(&hrtc, &t, RTC_FORMAT_BIN) == HAL_OK) &&
+        (HAL_RTC_GetDate(&hrtc, &d, RTC_FORMAT_BIN) == HAL_OK)) {
+        s_secs = (uint32_t)t.Hours * 3600u +
+                 (uint32_t)t.Minutes * 60u +
+                 (uint32_t)t.Seconds;
+    } else {
+        s_secs = (uint32_t)DEFAULT_HOURS * 3600u;   /* RTC 读取失败兜底 */
+    }
 }
 
 /* SysTick 中断里调用（1ms 一次）。与 HAL_IncTick() 互不依赖，放前放后均可。 */
@@ -41,6 +59,16 @@ void clock_time_set(uint8_t h, uint8_t m, uint8_t s)
         return;                            /* 非法值直接忽略 */
     }
     s_secs = (uint32_t)h * 3600u + (uint32_t)m * 60u + (uint32_t)s;
+
+    /* 同步写回 RTC：掉电/复位后时间不丢（备份域 VBAT 供电） */
+    RTC_TimeTypeDef t = {0};
+    RTC_DateTypeDef d = {0};
+    t.Hours   = h;
+    t.Minutes = m;
+    t.Seconds = s;
+    (void)HAL_RTC_GetDate(&hrtc, &d, RTC_FORMAT_BIN);   /* 保留当前日期 */
+    (void)HAL_RTC_SetTime(&hrtc, &t, RTC_FORMAT_BIN);
+    (void)HAL_RTC_SetDate(&hrtc, &d, RTC_FORMAT_BIN);
 }
 
 void clock_time_get(clock_hms_t *out)
