@@ -10,7 +10,11 @@
 > 用它覆盖 `firmware/Core/` 中的同名文件即为功能完整的最终工程。
 > `firmware/Core/` 保留的是**硬件自检阶段**的旧版本，仅供对照，不要直接烧录。
 
-> 🎬 **功能演示视频**：[数字时钟功能演示（1 分 50 秒 · 720p · 压缩版）](docs/demo/数字时钟功能演示.mp4)
+[![数字时钟功能演示（点击封面跳转 B 站播放）](docs/demo/cover.jpg)](https://www.bilibili.com/video/BV1qnpd61E5a/)
+
+> 📺 **在线观看（B 站）**：[数字时钟功能演示](https://www.bilibili.com/video/BV1qnpd61E5a/)（1 分 50 秒）
+>
+> 🎬 **仓库内离线版**：[数字时钟功能演示.mp4](docs/demo/数字时钟功能演示.mp4)（720p · 12 MB 压缩版）
 
 | 版本 | tag | 冻结日期 | 说明 |
 |---|---|---|---|
